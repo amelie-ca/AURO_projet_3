@@ -33,6 +33,51 @@ def AmerCreation (nbamer : int, distX : int, distY : int, xA0 : int, yA0 : int, 
     amersBruit = amers + np.linalg.cholesky(sigma)@np.random.normal(size=(2*nbamer,))
     print("--- Carte cree ---")
     return amers, amersBruit
+"""
+Fonction pour la generation de la trajectoire de la commande du robot 
+Input xR0, yR0 : position initiale du robot, amers : position des amers non bruitee, pas : pas de translation de la commande
+Output : U : matrice avec la commande du robot pour chaque instant, xR matrice avec la pose du robot pour chaque instant
+"""
+
+
+def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float ) -> np.ndarray :
+    #Recuperation des donnees pour la generation de la commande 
+    print(amers[2], amers[0], nbamer-1)
+    depX = (amers[2]-amers[0]) * (nbamer/2-1) + amers[0] + xR0 + 1
+    depY = (amers[nbamer+1]-amers[1])/2 + amers[1] + yR0
+
+    # Boucle de generation de la commande 
+    print("... Calcul de la commande ...")
+    elemX = depX/pas
+    elemY = depY/pas
+    k = 0 
+    U = np.empty((3,int(2*elemX+elemY+2)))
+    while k < elemX :
+        U[:,k] = (pas, 0, 0)
+        k += 1
+    U[:,k] = (0, 0, np.pi)
+    k += 1
+    while k < elemY+elemX+1 :
+        U[:,k] = (0, pas, 0)
+        k += 1
+    U[:,k] = (0, 0, np.pi)
+    k += 1
+    while k < 2*elemX+elemY+2 :
+        U[:,k] = (-pas, 0, 0)
+        k += 1
+    print("--- Commande calculee ---")
+
+    # Boucle de generation de la trajectoire 
+    print("... Calcul de la trajectoire ...")
+    xR = np.empty((3, U.shape[1]+1))
+    xR[:,0] = (xR0, yR0, 0)
+    k=0
+    while k < U.shape[1] :
+        xR[:,k+1] = xR[:,k]+U[:,k]
+        k += 1
+    print("--- Trajectoire calculee ---")       
+    return U, xR
+
 
 """
 Fonction pour l'affichage de la carte 
@@ -52,12 +97,21 @@ def MapPlot (etat : np.ndarray):
     ax.set(xlim=(-1, 10), xticks=np.arange(-1, 11), ylim=(-1, 5), yticks=np.arange(-1, 6))
     ax.set_title('Carte avec les amers')
     plt.grid()
+    print("\n--- Fermez la figure pour continuer ---\n")
     plt.show()
 
 if __name__ == '__main__':
+    #Donnee
     nbamer = 8
     distX = distY = 2
-    xA0, yA0 = (2,1)
+    xA0, yA0 = (1,1)
     dispAmers = 0.01
+    pas = 0.1
+    xR0, yR0 = (0,0)
+
+    #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
     MapPlot(amersB)
+    U, RobPose = GenerateRobotPosition(xR0, yR0, amers, pas)
+
+    #Filtrage
