@@ -33,6 +33,7 @@ def AmerCreation (nbamer : int, distX : int, distY : int, xA0 : int, yA0 : int, 
     amersBruit = amers + np.linalg.cholesky(sigma)@np.random.normal(size=(2*nbamer,))
     print("--- Carte cree ---")
     return amers, amersBruit
+
 """
 Fonction pour la generation de la trajectoire de la commande du robot 
 Input xR0, yR0 : position initiale du robot, amers : position des amers non bruitee, pas : pas de translation de la commande
@@ -42,7 +43,6 @@ Output : U : matrice avec la commande du robot pour chaque instant, xR matrice a
 
 def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float ) -> np.ndarray :
     #Recuperation des donnees pour la generation de la commande 
-    print(amers[2], amers[0], nbamer-1)
     depX = (amers[2]-amers[0]) * (nbamer/2-1) + amers[0] + xR0 + 1
     depY = (amers[nbamer+1]-amers[1])/2 + amers[1] + yR0
 
@@ -55,7 +55,7 @@ def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float 
     while k < elemX :
         U[:,k] = (pas, 0, 0)
         k += 1
-    U[:,k] = (0, 0, np.pi)
+    U[:,k] = (0, 0, np.pi/2)
     k += 1
     while k < elemY+elemX+1 :
         U[:,k] = (0, pas, 0)
@@ -68,7 +68,7 @@ def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float 
     print("--- Commande calculee ---")
 
     # Boucle de generation de la trajectoire 
-    print("... Calcul de la trajectoire ...")
+    print("\n... Calcul de la trajectoire ...")
     xR = np.empty((3, U.shape[1]+1))
     xR[:,0] = (xR0, yR0, 0)
     k=0
@@ -84,21 +84,36 @@ Fonction pour l'affichage de la carte
 Input : l'etat contenant la position des amers
 Output : None 
 """
-def MapPlot (etat : np.ndarray):
+def MapPlot (amers : np.ndarray) :
     fig, ax = plt.subplots()
-    N = etat.shape[0]
+    N = amers.shape[0]
     x = np.ndarray((int(N/2),))
     y = np.ndarray((int(N/2),))
     for i in range(0, N, 2):
-        x[int(i/2)] = etat[i]
-        y[int(i/2)] = etat[i+1]
+        x[int(i/2)] = amers[i]
+        y[int(i/2)] = amers[i+1]
 
-    ax.scatter(x, y, marker="X")
+    ax.scatter(x, y, marker="X", color="darkcyan")
     ax.set(xlim=(-1, 10), xticks=np.arange(-1, 11), ylim=(-1, 5), yticks=np.arange(-1, 6))
-    ax.set_title('Carte avec les amers')
     plt.grid()
+    plt.draw()
+    return fig, ax
+
+
+def PlotRobotMap(etat : np.ndarray, amers : np.ndarray) :
+    fig, ax = MapPlot(amers)
+    N = etat.shape[1]
+    x = np.ndarray((N,))
+    y = np.ndarray((N,))
+    for i in range(N) :
+        x[i] = etat[0,i]
+        y[i] = etat[1,i]
+    ax.plot(x, y, color="seagreen", marker="1")
+    ax.set_title('Carte avec les amers et la trajectoire reelle du robot', fontsize=14)
     print("\n--- Fermez la figure pour continuer ---\n")
+    plt.draw()
     plt.show()
+
 
 if __name__ == '__main__':
     #Donnee
@@ -111,7 +126,7 @@ if __name__ == '__main__':
 
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
-    MapPlot(amersB)
     U, RobPose = GenerateRobotPosition(xR0, yR0, amers, pas)
-
+    PlotRobotMap(RobPose, amersB)
+    
     #Filtrage
