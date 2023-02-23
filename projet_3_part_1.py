@@ -36,12 +36,12 @@ def AmerCreation (nbamer : int, distX : int, distY : int, xA0 : int, yA0 : int, 
 
 """
 Fonction pour la generation de la trajectoire de la commande du robot 
-Input xR0, yR0 : position initiale du robot, amers : position des amers non bruitee, pas : pas de translation de la commande
+Input xR0, yR0 : position initiale du robot, amers : position des amers non bruitee, pas : pas de translation de la commande, covPos, covAng : covarience du bruit pour la position et l'orientation du robot
 Output : U : matrice avec la commande du robot pour chaque instant, xR matrice avec la pose du robot pour chaque instant
 """
 
 
-def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float ) -> np.ndarray :
+def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float, covPos : float, covAng : float ) -> np.ndarray :
     #Recuperation des donnees pour la generation de la commande 
     depX = (amers[2]-amers[0]) * (nbamer/2-1) + amers[0] + xR0 + 1
     depY = (amers[nbamer+1]-amers[1])/2 + amers[1] + yR0
@@ -60,7 +60,7 @@ def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float 
     while k < elemY+elemX+1 :
         U[:,k] = (0, pas, 0)
         k += 1
-    U[:,k] = (0, 0, np.pi)
+    U[:,k] = (0, 0, np.pi/2)
     k += 1
     while k < 2*elemX+elemY+2 :
         U[:,k] = (-pas, 0, 0)
@@ -70,13 +70,24 @@ def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float 
     # Boucle de generation de la trajectoire 
     print("\n... Calcul de la trajectoire ...")
     xR = np.empty((3, U.shape[1]+1))
+    xRB = np.empty((3, U.shape[1]+1))
     xR[:,0] = (xR0, yR0, 0)
     k=0
     while k < U.shape[1] :
         xR[:,k+1] = xR[:,k]+U[:,k]
         k += 1
+    #Ajout du bruit dans la trajcetoire
+    sigma = np.zeros((3, 3))
+    sigma[0,0] = covPos
+    sigma[1,1] = covPos
+    sigma[2,2] = covAng
+
+    k = 0
+    while k < xR.shape[1] :
+        xRB[:,k] = xR[:,k]+np.linalg.cholesky(sigma)@np.random.normal(size=(3,))
+        k += 1
     print("--- Trajectoire calculee ---")       
-    return U, xR
+    return U, xR, xRB
 
 
 """
@@ -126,7 +137,7 @@ if __name__ == '__main__':
 
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
-    U, RobPose = GenerateRobotPosition(xR0, yR0, amers, pas)
-    PlotRobotMap(RobPose, amersB)
-    
+    U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, 0.0005, 0.001)
+    PlotRobotMap(RobPoseB, amersB)
+
     #Filtrage
