@@ -9,15 +9,16 @@ But :
 """
 import matplotlib.pyplot as plt
 import numpy as np
+import math
 
 """
 Fonction de creation de la carte. 
 Inuput : nombre amers, distance en x entre deux amers, distance en y entre les deux lignes d'amer, position premer amer (xA0, yA0)
 Output : ndarray de dim (2*nbamer, 1) contenant Xamer0, Yamer0, Xamer1, Yamer1, ...
 """
-def AmerCreation (nbamer : int, distX : int, distY : int, xA0 : int, yA0 : int, dispAmers : int) -> np.ndarray :
+def AmerCreation(nbamer : int, distX : int, distY : int, xA0 : int, yA0 : int, dispAmers : int) -> np.ndarray :
     print("... Creation de la Carte ...")
-    amers = np.ndarray((2*nbamer,))
+    amers = np.empty((2*nbamer,))
     amers[0:2] = (xA0, yA0)
     for i in range(2, nbamer, 2) :
         amers[i] = amers[i-2]+distX
@@ -89,17 +90,35 @@ def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float,
     print("--- Trajectoire calculee ---")       
     return U, xR, xRB
 
+def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float) -> np.ndarray:
+    print("\n... Calcul des mesures ...")
+    Nbamer = amers.shape[0]
+    Nbinst = Rpose.shape[1]
+    Mes = np.empty((Nbamer, Nbinst))
+
+    for k in range(1, Nbinst) :
+        for n in range(0,Nbamer,2) :
+            Xrel = amers[n] - Rpose[0,k]
+            Yrel = amers[n+1] - Rpose[1,k]
+            if math.sqrt(Xrel**2+Yrel**2) <= distVizu :
+                Mes[n, k] = Xrel
+                Mes[n+1, k] = Yrel
+            else :
+                Mes[n, k] = np.nan
+                Mes[n+1, k] = np.nan
+    print("--- Mesures calculees ---") 
+    return Mes
 
 """
 Fonction pour l'affichage de la carte 
 Input : l'etat contenant la position des amers
 Output : None 
 """
-def MapPlot (amers : np.ndarray) :
+def MapPlot(amers : np.ndarray) :
     fig, ax = plt.subplots()
     N = amers.shape[0]
-    x = np.ndarray((int(N/2),))
-    y = np.ndarray((int(N/2),))
+    x = np.empty((int(N/2),))
+    y = np.empty((int(N/2),))
     for i in range(0, N, 2):
         x[int(i/2)] = amers[i]
         y[int(i/2)] = amers[i+1]
@@ -114,8 +133,8 @@ def MapPlot (amers : np.ndarray) :
 def PlotRobotMap(etat : np.ndarray, amers : np.ndarray) :
     fig, ax = MapPlot(amers)
     N = etat.shape[1]
-    x = np.ndarray((N,))
-    y = np.ndarray((N,))
+    x = np.empty((N,))
+    y = np.empty((N,))
     for i in range(N) :
         x[i] = etat[0,i]
         y[i] = etat[1,i]
@@ -134,10 +153,12 @@ if __name__ == '__main__':
     dispAmers = 0.01
     pas = 0.1
     xR0, yR0 = (0,0)
+    distVizu = 2
 
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
     U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, 0.0005, 0.001)
-    PlotRobotMap(RobPoseB, amersB)
+    #PlotRobotMap(RobPoseB, amersB)
+    Z = RobotVizu(RobPoseB, amersB, distVizu)
 
     #Filtrage
