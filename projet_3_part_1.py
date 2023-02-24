@@ -40,8 +40,6 @@ Fonction pour la generation de la trajectoire de la commande du robot
 Input xR0, yR0 : position initiale du robot, amers : position des amers non bruitee, pas : pas de translation de la commande, covPos, covAng : covarience du bruit pour la position et l'orientation du robot
 Output : U : matrice avec la commande du robot pour chaque instant, xR matrice avec la pose du robot pour chaque instant
 """
-
-
 def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float, covPos : float, covAng : float ) -> np.ndarray :
     #Recuperation des donnees pour la generation de la commande 
     depX = (amers[2]-amers[0]) * (nbamer/2-1) + amers[0] + xR0 + 1
@@ -90,6 +88,11 @@ def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float,
     print("--- Trajectoire calculee ---")       
     return U, xR, xRB
 
+""""
+Fonction de generation des mesures du robot par un champ de vision circulaire 
+Input Rpose : la pose reelle du robot, amers : la position reelle des amers, distVizu : le rayon du cercle du champ de vision du robot
+Output : Mes : le vecteur des mesures recues par le robot pour chaque instant
+"""
 def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float) -> np.ndarray:
     print("\n... Calcul des mesures ...")
     Nbamer = amers.shape[0]
@@ -110,7 +113,7 @@ def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float) -> np.nd
     return Mes
 
 """
-Fonction pour l'affichage de la carte 
+Fonction pour l'affichage de la carte avec les amers
 Input : l'etat contenant la position des amers
 Output : None 
 """
@@ -129,7 +132,11 @@ def MapPlot(amers : np.ndarray) :
     plt.draw()
     return fig, ax
 
-
+"""
+Fonction pour l'affichage de la carte avec les amers et la trajectoire du robot 
+Input : etat : pose du robot pour toute la simulation, amers : position des amers 
+Output : None
+"""
 def PlotRobotMap(etat : np.ndarray, amers : np.ndarray) :
     fig, ax = MapPlot(amers)
     N = etat.shape[1]
@@ -158,7 +165,7 @@ if __name__ == '__main__':
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
     U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, 0.0005, 0.001)
-    #PlotRobotMap(RobPoseB, amersB)
+    PlotRobotMap(RobPoseB, amersB)
     Z = RobotVizu(RobPoseB, amersB, distVizu)
 
     #Filtrage
