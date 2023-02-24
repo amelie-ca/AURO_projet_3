@@ -93,7 +93,7 @@ Fonction de generation des mesures du robot par un champ de vision circulaire
 Input Rpose : la pose reelle du robot, amers : la position reelle des amers, distVizu : le rayon du cercle du champ de vision du robot
 Output : Mes : le vecteur des mesures recues par le robot pour chaque instant
 """
-def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float) -> np.ndarray:
+def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float, covBruit : float) -> np.ndarray:
     print("\n... Calcul des mesures ...")
     Nbamer = amers.shape[0]
     Nbinst = Rpose.shape[1]
@@ -104,8 +104,9 @@ def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float) -> np.nd
             Xrel = amers[n] - Rpose[0,k]
             Yrel = amers[n+1] - Rpose[1,k]
             if math.sqrt(Xrel**2+Yrel**2) <= distVizu :
-                Mes[n, k] = Xrel
-                Mes[n+1, k] = Yrel
+                #Pour un scalaire, chol(X) = sqrt(X)
+                Mes[n, k] = Xrel + math.sqrt(covBruit) * np.random.normal()
+                Mes[n+1, k] = Yrel + math.sqrt(covBruit) * np.random.normal()
             else :
                 Mes[n, k] = np.nan
                 Mes[n+1, k] = np.nan
@@ -161,11 +162,12 @@ if __name__ == '__main__':
     pas = 0.1
     xR0, yR0 = (0,0)
     distVizu = 2
+    covB = 0.01
 
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
-    U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, 0.0005, 0.001)
+    U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, 0.0005, 0.00001)
     PlotRobotMap(RobPoseB, amersB)
-    Z = RobotVizu(RobPoseB, amersB, distVizu)
+    Z = RobotVizu(RobPoseB, amersB, distVizu, covB)
 
     #Filtrage
