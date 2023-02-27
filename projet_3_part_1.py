@@ -114,7 +114,7 @@ def MeasSelect(Mes : np.ndarray, NbEtat : int, dispAmers) :
     #indZ initial : 0 -> indice du dernier element ajoute dans Zuse, H init : 3*3 
     indZ = 0
     H = np.zeros((2,NbEtat))
-    Zuse = np.ndarray((2,1))
+    Zuse = np.ndarray((2,))
     for k in range(0, Mes.size, 2) :
         if not np.isnan(Mes[k]) :
             if indZ == 0:
@@ -160,7 +160,7 @@ Fonction pour l'affichage de la carte avec les amers et la trajectoire du robot
 Input : etat : pose du robot pour toute la simulation, amers : position des amers 
 Output : None
 """
-def PlotRobotMap(etat : np.ndarray, amers : np.ndarray) :
+def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : string) :
     fig, ax = MapPlot(amers)
     N = etat.shape[1]
     x = np.empty((N,))
@@ -169,7 +169,7 @@ def PlotRobotMap(etat : np.ndarray, amers : np.ndarray) :
         x[i] = etat[0,i]
         y[i] = etat[1,i]
     ax.plot(x, y, color="seagreen", marker="1")
-    ax.set_title('Carte avec les amers et la trajectoire reelle du robot', fontsize=14)
+    ax.set_title(title, fontsize=14)
     print("\n--- Fermez la figure pour continuer ---\n")
     plt.draw()
     plt.show()
@@ -191,7 +191,7 @@ if __name__ == '__main__':
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
     U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, covDis, covAng)
-    PlotRobotMap(RobPoseB, amersB)
+    PlotRobotMap(RobPoseB, amersB, 'Carte avec les amers et la trajectoire reelle du robot')
     Z = RobotVizu(RobPoseB, amersB, distVizu, covB)
 
     #Filtrage
@@ -205,16 +205,22 @@ if __name__ == '__main__':
     Qw = np.diag(np.append([covDis, covDis, covAng], 0.000001*np.ones(2*nbamer)))
     B = np.append(np.identity(3), np.zeros((2*nbamer, 3)), axis=0)
 
-    Xpred[:,0] = np.append([xR0, yR0, 0], amers)
-    Ppred[:,:,0] = np.diag(np.append([0, 0, 0], dispAmers*np.ones(2*nbamer)))
+    Xest[:,0] = np.append([xR0, yR0, 0], amers)
+    Pest[:,:,0] = np.diag(np.append([0, 0, 0], dispAmers*np.ones(2*nbamer)))
 
-    for k in range(1, 10) :
+    for k in range(1, Nbinst) :
         print('Kalman : prediction, iteration %d' %(k))
         #Prediction 
-        Xest[:,k] = Xpred[:,k-1]+B@U[:,k-1]
-        Pest[:,:,k] = Ppred[:,:,k-1] + Qw #A = identite, pas besoin de le mettre
+        Xpred[:,k] = Xest[:,k-1]+B@U[:,k-1]
+        Ppred[:,:,k] = Pest[:,:,k-1] + Qw #A = identite, pas besoin de le mettre
+        print(Xpred[:,k])
+        print(Ppred[:,:,k])
         print('Kalman : mise a jour, iteration %d' %(k))
         #Mise a jour 
         Zuse, H, Rv = MeasSelect(Z[:,k-1], Xpred.shape[0], dispAmers) #Decalage de 1 pour les mesures
-        Xpred[:,k] = Xest[:,k]
-        Ppred[:,:,k] = Pest[:,:,k]
+        Zest = (H@Xpred[:,k]).T
+        S = Rv + H@Ppred[:,:,k]@H.T
+        K = Ppred[:,:,k]@H.T@np.linalg.inv(S)
+        Xest[:,k] = Xpred[:,k] + K@(Zuse-Zest)
+        Pest[:,:,k] = Ppred[:,:,k] - K@H@Ppred[:,:,k]
+    
