@@ -71,17 +71,14 @@ def GenerateRobotPosition(xR0 : int, yR0 : int, amers : np.ndarray, pas : float,
     xR = np.empty((3, U.shape[1]+1))
     xRB = np.empty((3, U.shape[1]+1))
     xR[:,0] = (xR0, yR0, 0)
+    xRB[:,0] = (xR0, yR0, 0)
+    sigma = np.diag([covPos, covPos, covAng])
     k=0
     while k < U.shape[1] :
-        xR[:,k+1] = xR[:,k]+U[:,k]
+        xR[:,k+1] = xRB[:,k]+U[:,k]
+        xRB[:,k+1] = xR[:,k+1]+np.linalg.cholesky(sigma)@np.random.normal(size=(3,))
         k += 1
-    #Ajout du bruit dans la trajcetoire
-    sigma = np.diag([covPos, covPos, covAng])
-
-    k = 0
-    while k < xR.shape[1] :
-        xRB[:,k] = xR[:,k]+np.linalg.cholesky(sigma)@np.random.normal(size=(3,))
-        k += 1
+    xRB[:,k] = xR[:,k]+np.linalg.cholesky(sigma)@np.random.normal(size=(3,))
     print("--- Trajectoire calculee ---")       
     return U, xR, xRB
 
@@ -109,6 +106,18 @@ def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float, covBruit
                 Mes[n+1, k-1] = np.nan
     print("--- Mesures calculees ---") 
     return Mes
+
+"""
+Fonction de tri des mesures, permet d'enlever les elements NaN du vecteur de mesure
+"""
+def MeasSelect(Mes : np.ndarray, NbEtat : int) : 
+    #indZ initial : -1 -> indice du dernier element ajoute dans Zuse, H init : 3*3 
+    indZ = -1
+    H = np.ndarray((3,3))
+    Zuse = np.ndarray((2,1))
+    for k in range(0, Mes.shape[1], 2) :
+        
+    return Zuse, H, Rv
 
 """
 Fonction pour l'affichage de la carte avec les amers
@@ -158,7 +167,7 @@ if __name__ == '__main__':
     dispAmers = 0.01
     pas = 0.1
     xR0, yR0 = (0,0)
-    covDis = 0.0005
+    covDis = 0.00025
     covAng = 0.01
     distVizu = 2
     covB = 0.01
@@ -166,12 +175,12 @@ if __name__ == '__main__':
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
     U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, covDis, covAng)
-    #PlotRobotMap(RobPoseB, amersB)
+    PlotRobotMap(RobPoseB, amersB)
     Z = RobotVizu(RobPoseB, amersB, distVizu, covB)
-
+"""
     #Filtrage
     #Initialisation
-    Nbinst = Z.shape[1]+1
+    Nbinst = U.shape[1]
     Xest = np.empty((3+nbamer*2, Nbinst))
     Pest = np.empty((3+nbamer*2,3+nbamer*2,Nbinst))
     Xpred = np.empty((3+nbamer*2, Nbinst))
@@ -185,8 +194,10 @@ if __name__ == '__main__':
     for k in range(1, 6) :
     #Prediction 
         Xest[:,k] = Xpred[:,k-1]+B@U[:,k-1]
-        Pest[:,:,k] = Ppred[:,:,k-1] + Qw#A = identite, pas besoin de le mettre
+        Pest[:,:,k] = Ppred[:,:,k-1] + Qw #A = identite, pas besoin de le mettre
     #Mise a jour 
+        Zuse, H, Rv = MeasSelect(Z[:,k-1], Xpred.shape[1]) #Decalage de 1 pour les mesures
         Xpred[:,k] = Xest[:,k]
         Xpred[:,:,k] = Pest[:,:,k]
     #Construction du vecteur de mesures utilise et de la matrice de mesure
+"""
