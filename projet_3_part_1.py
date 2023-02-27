@@ -160,7 +160,7 @@ Fonction pour l'affichage de la carte avec les amers et la trajectoire du robot
 Input : etat : pose du robot pour toute la simulation, amers : position des amers 
 Output : None
 """
-def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : string) :
+def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : str) :
     fig, ax = MapPlot(amers)
     N = etat.shape[1]
     x = np.empty((N,))
@@ -213,8 +213,6 @@ if __name__ == '__main__':
         #Prediction 
         Xpred[:,k] = Xest[:,k-1]+B@U[:,k-1]
         Ppred[:,:,k] = Pest[:,:,k-1] + Qw #A = identite, pas besoin de le mettre
-        print(Xpred[:,k])
-        print(Ppred[:,:,k])
         print('Kalman : mise a jour, iteration %d' %(k))
         #Mise a jour 
         Zuse, H, Rv = MeasSelect(Z[:,k-1], Xpred.shape[0], dispAmers) #Decalage de 1 pour les mesures
@@ -223,4 +221,5 @@ if __name__ == '__main__':
         K = Ppred[:,:,k]@H.T@np.linalg.inv(S)
         Xest[:,k] = Xpred[:,k] + K@(Zuse-Zest)
         Pest[:,:,k] = Ppred[:,:,k] - K@H@Ppred[:,:,k]
+    PlotRobotMap(Xest[0:3,:], Xest[3:, Xest.shape[1]-1], 'Trajectoire finale estimee')
     
