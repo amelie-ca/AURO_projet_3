@@ -110,13 +110,29 @@ def RobotVizu(Rpose : np.ndarray, amers : np.ndarray, distVizu : float, covBruit
 """
 Fonction de tri des mesures, permet d'enlever les elements NaN du vecteur de mesure
 """
-def MeasSelect(Mes : np.ndarray, NbEtat : int) : 
-    #indZ initial : -1 -> indice du dernier element ajoute dans Zuse, H init : 3*3 
-    indZ = -1
-    H = np.ndarray((3,3))
+def MeasSelect(Mes : np.ndarray, NbEtat : int, dispAmers) : 
+    #indZ initial : 0 -> indice du dernier element ajoute dans Zuse, H init : 3*3 
+    indZ = 0
+    H = np.zeros((2,NbEtat))
     Zuse = np.ndarray((2,1))
-    for k in range(0, Mes.shape[1], 2) :
-        
+    for k in range(0, Mes.size, 2) :
+        if not np.isnan(Mes[k]) :
+            if indZ == 0:
+                H[0,0] = -1
+                H[0, k+3] = 1
+                H[1, 1] = -1
+                H[1, k+4] = 1
+                Zuse[0] = Mes[k]
+                Zuse[1] = Mes[k+1]
+            else :
+                H = np.append(H, np.zeros((2,NbEtat)), axis=0)
+                H[indZ,0] = -1
+                H[indZ, k+3] = 1
+                H[indZ+1, 1] = -1
+                H[indZ+1, k+4] = 1
+                Zuse = np.append(Zuse, [[Mes[k]],[Mes[k+1]]])
+            indZ +=2
+    Rv = np.diag(dispAmers*np.ones(Zuse.shape[0]))
     return Zuse, H, Rv
 
 """
@@ -177,9 +193,10 @@ if __name__ == '__main__':
     U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, covDis, covAng)
     PlotRobotMap(RobPoseB, amersB)
     Z = RobotVizu(RobPoseB, amersB, distVizu, covB)
-"""
+
     #Filtrage
     #Initialisation
+    print("Filtrage - Initialisation")
     Nbinst = U.shape[1]
     Xest = np.empty((3+nbamer*2, Nbinst))
     Pest = np.empty((3+nbamer*2,3+nbamer*2,Nbinst))
@@ -189,15 +206,15 @@ if __name__ == '__main__':
     B = np.append(np.identity(3), np.zeros((2*nbamer, 3)), axis=0)
 
     Xpred[:,0] = np.append([xR0, yR0, 0], amers)
-    Ppred[:,:,0] = np.zeros((Xpred.shape[0], Xpred.shape[0]))
+    Ppred[:,:,0] = np.diag(np.append([0, 0, 0], dispAmers*np.ones(2*nbamer)))
 
-    for k in range(1, 6) :
-    #Prediction 
+    for k in range(1, 10) :
+        print('Kalman : prediction, iteration %d' %(k))
+        #Prediction 
         Xest[:,k] = Xpred[:,k-1]+B@U[:,k-1]
         Pest[:,:,k] = Ppred[:,:,k-1] + Qw #A = identite, pas besoin de le mettre
-    #Mise a jour 
-        Zuse, H, Rv = MeasSelect(Z[:,k-1], Xpred.shape[1]) #Decalage de 1 pour les mesures
+        print('Kalman : mise a jour, iteration %d' %(k))
+        #Mise a jour 
+        Zuse, H, Rv = MeasSelect(Z[:,k-1], Xpred.shape[0], dispAmers) #Decalage de 1 pour les mesures
         Xpred[:,k] = Xest[:,k]
-        Xpred[:,:,k] = Pest[:,:,k]
-    #Construction du vecteur de mesures utilise et de la matrice de mesure
-"""
+        Ppred[:,:,k] = Pest[:,:,k]
