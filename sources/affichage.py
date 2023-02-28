@@ -7,7 +7,7 @@ Input : l'etat contenant la position des amers
 Output : None 
 """
 def MapPlot(amers : np.ndarray, posPlot) :
-    ax = plt.subplot(2, 3, posPlot)
+    ax = plt.subplot(posPlot[0], posPlot[1], posPlot[2])
     N = amers.shape[0]
     x = np.empty((int(N/2),))
     y = np.empty((int(N/2),))
@@ -45,11 +45,11 @@ Inupt etatReel : le vecteur d'etat reel du robot, amersReel : le vecteur de la p
 """
 def PlotRes(etatReel : np.ndarray, amersReel : np.ndarray, etatEst : np.ndarray, NbInst : int) : 
     N = int(NbInst/5)
-    PlotRobotMap(etatReel, amersReel, 'Realite terain', 1)
-    PlotRobotMap(etatEst[:3, :], etatEst[3:, NbInst-1], "Estimation finale", 4)
-    PlotRobotMap(etatEst[:3, :N-1], etatEst[3:, N-1], "Estimation a l'iteration "+str(N), 2)
-    PlotRobotMap(etatEst[:3, :2*N-1], etatEst[3:, 2*N-1], "Estimation a l'iteration "+str(2*N), 3)
-    PlotRobotMap(etatEst[:3, :3*N-1], etatEst[3:, 3*N-1], "Estimation a l'iteration "+str(3*N), 5)
-    PlotRobotMap(etatEst[:3, :4*N-1], etatEst[3:, 4*N-1], "Estimation a l'iteration "+str(4*N), 6)
+    PlotRobotMap(etatReel, amersReel, 'Realite terain', (2,3,1))
+    PlotRobotMap(etatEst[:3, :], etatEst[3:, NbInst-1], "Estimation finale", (2,3,4))
+    PlotRobotMap(etatEst[:3, :N-1], etatEst[3:, N-1], "Estimation a l'iteration "+str(N), (2,3,2))
+    PlotRobotMap(etatEst[:3, :2*N-1], etatEst[3:, 2*N-1], "Estimation a l'iteration "+str(2*N), (2,3,3))
+    PlotRobotMap(etatEst[:3, :3*N-1], etatEst[3:, 3*N-1], "Estimation a l'iteration "+str(3*N), (2,3,5))
+    PlotRobotMap(etatEst[:3, :4*N-1], etatEst[3:, 4*N-1], "Estimation a l'iteration "+str(4*N), (2,3,6))
     print("\n--- Fermez la figure pour terminer ---\n")
     plt.show()

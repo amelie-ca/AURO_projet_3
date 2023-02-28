@@ -43,5 +43,5 @@ if __name__ == '__main__':
 
     amers = AmerCreation(8, 1, 2, 1, 1)
     U, Xreel, Nb = GenerateRobotPosition(0, 0, 0.1, 0.01, 0.01)
-    PlotRobotMap(Xreel, amers, 'test', 1)
+    PlotRobotMap(Xreel, amers, 'test', (1,1,1))
     plt.show()
