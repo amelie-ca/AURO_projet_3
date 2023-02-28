@@ -140,8 +140,8 @@ Fonction pour l'affichage de la carte avec les amers
 Input : l'etat contenant la position des amers
 Output : None 
 """
-def MapPlot(amers : np.ndarray) :
-    fig, ax = plt.subplots()
+def MapPlot(amers : np.ndarray, posPlot) :
+    ax = plt.subplot(2, 3, posPlot)
     N = amers.shape[0]
     x = np.empty((int(N/2),))
     y = np.empty((int(N/2),))
@@ -153,15 +153,15 @@ def MapPlot(amers : np.ndarray) :
     ax.set(xlim=(-1, 10), xticks=np.arange(-1, 11), ylim=(-1, 5), yticks=np.arange(-1, 6))
     plt.grid()
     plt.draw()
-    return fig, ax
+    return ax
 
 """
 Fonction pour l'affichage de la carte avec les amers et la trajectoire du robot 
 Input : etat : pose du robot pour toute la simulation, amers : position des amers 
 Output : None
 """
-def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : str) :
-    fig, ax = MapPlot(amers)
+def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : str, posPlot) :
+    ax = MapPlot(amers, posPlot)
     N = etat.shape[1]
     x = np.empty((N,))
     y = np.empty((N,))
@@ -170,8 +170,22 @@ def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : str) :
         y[i] = etat[1,i]
     ax.plot(x, y, color="seagreen", marker="1")
     ax.set_title(title, fontsize=14)
-    print("\n--- Fermez la figure pour continuer ---\n")
     plt.draw()
+    
+"""
+Fonction qui permet d'afficher 6 cartes differents : une carte de la situation reelle, 
+une carte de la situation totale estimee et 4 cartes pour des situation estimee intermediaires
+Inupt etatReel : le vecteur d'etat reel du robot, amersReel : le vecteur de la position reelle des amers, etatEst : le vecteur d'etats estimes robot et amers, NbInst : le nombre d'iteration du filtre
+"""
+def PlotRes(etatReel : np.ndarray, amersReel : np.ndarray, etatEst : np.ndarray, NbInst : int) : 
+    N = int(NbInst/5)
+    PlotRobotMap(etatReel, amersReel, 'Realite terain', 1)
+    PlotRobotMap(etatEst[:3, :], etatEst[3:, NbInst-1], "Estimation finale", 4)
+    PlotRobotMap(etatEst[:3, :N-1], etatEst[3:, N-1], "Estimation a l'iteration "+str(N), 2)
+    PlotRobotMap(etatEst[:3, :2*N-1], etatEst[3:, 2*N-1], "Estimation a l'iteration "+str(2*N), 3)
+    PlotRobotMap(etatEst[:3, :3*N-1], etatEst[3:, 3*N-1], "Estimation a l'iteration "+str(3*N), 5)
+    PlotRobotMap(etatEst[:3, :4*N-1], etatEst[3:, 4*N-1], "Estimation a l'iteration "+str(4*N), 6)
+    print("\n--- Fermez la figure pour terminer ---\n")
     plt.show()
 
 
@@ -191,24 +205,23 @@ if __name__ == '__main__':
     #Simumation de l'environnement et du deplacement
     amers, amersB = AmerCreation(nbamer, distX, distY, xA0, yA0, dispAmers)
     U, RobPose, RobPoseB = GenerateRobotPosition(xR0, yR0, amers, pas, covDis, covAng)
-    PlotRobotMap(RobPoseB, amersB, 'Carte avec les amers et la trajectoire reelle du robot')
     Z = RobotVizu(RobPoseB, amersB, distVizu, covB)
 
     #Filtrage
     #Initialisation
     print("Filtrage - Initialisation")
-    Nbinst = U.shape[1]
-    Xest = np.empty((3+nbamer*2, Nbinst))
-    Pest = np.empty((3+nbamer*2,3+nbamer*2,Nbinst))
-    Xpred = np.empty((3+nbamer*2, Nbinst))
-    Ppred = np.empty((3+nbamer*2,3+nbamer*2,Nbinst))
+    NbInst = U.shape[1]+1
+    Xest = np.empty((3+nbamer*2, NbInst))
+    Pest = np.empty((3+nbamer*2,3+nbamer*2,NbInst))
+    Xpred = np.empty((3+nbamer*2, NbInst))
+    Ppred = np.empty((3+nbamer*2,3+nbamer*2,NbInst))
     Qw = np.diag(np.append([covDis, covDis, covAng], 0.000001*np.ones(2*nbamer)))
     B = np.append(np.identity(3), np.zeros((2*nbamer, 3)), axis=0)
 
     Xest[:,0] = np.append([xR0, yR0, 0], amers)
     Pest[:,:,0] = np.diag(np.append([0, 0, 0], dispAmers*np.ones(2*nbamer)))
 
-    for k in range(1, Nbinst) :
+    for k in range(1, NbInst) :
         print('Kalman : prediction, iteration %d' %(k))
         #Prediction 
         Xpred[:,k] = Xest[:,k-1]+B@U[:,k-1]
@@ -221,5 +234,6 @@ if __name__ == '__main__':
         K = Ppred[:,:,k]@H.T@np.linalg.inv(S)
         Xest[:,k] = Xpred[:,k] + K@(Zuse-Zest)
         Pest[:,:,k] = Ppred[:,:,k] - K@H@Ppred[:,:,k]
-    PlotRobotMap(Xest[0:3,:], Xest[3:, Xest.shape[1]-1], 'Trajectoire finale estimee')
     
+    #Affichage des resultats 
+    PlotRes(RobPoseB, amersB, Xest, NbInst)
