@@ -184,4 +184,4 @@ if __name__ == '__main__':
         Pest[:,:,k] = Ppred[:,:,k] - K@H@Ppred[:,:,k]
     
     #Affichage des resultats 
-    PlotRes(RobPoseB, amersB, Xest, NbInst)
+    PlotRes(RobPoseB, amersB, Xest, Pest, NbInst)
