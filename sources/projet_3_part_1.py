@@ -5,7 +5,6 @@ But :
     Creation et affichage d'une carte de N amers
     Modele de robot lineaire 
     SLAM base Kalman 
-    Affichage au cours de la simulation
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -139,7 +138,7 @@ def MeasSelect(Mes : np.ndarray, NbEtat : int, dispAmers) :
 
 
 if __name__ == '__main__':
-    #Donnee
+    #Donnees
     nbamer = 8
     distX = distY = 2
     xA0, yA0 = (1,1)
