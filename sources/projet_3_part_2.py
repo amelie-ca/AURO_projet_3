@@ -50,7 +50,18 @@ def GenerateRobotPosition(xR0 : float, yR0 : float, pasTau : float, covPos : flo
     return U, RobPos, N1, N2, N3, sigma0, sigma1, sigma2, sigma3
 
 #Pour les mesures : dictlist = [[dict() for x in range(n)] for y in range(6)] permet de creer un dictionnaire 2D, le faire pour les X amers et à chaque amer mettre mesure en angle, distance et cov de bruit associee a chaque elem
+def GEnerateRobotMeasurment (NbInst : int, Nbamer : int, RobPos : np.ndarray, amers : np.ndarray) :
+    Mes = [[dict() for x in range(Nbamer)] for y in range(NbInst)]
+    for y in range(NbInst) :
+        for x in range(0, 2*Nbamer, 2) : 
+            #calcul range et bearing 
+            ran = 
+            bear = math.atan2()
 
+            #ajout dans la structure 
+            Mes[y][x] = {"amer" : x, "range" : ran, "bearing" : bear}
+    return Mes
+#Pour le tri des mesures, faire une fonction, on parcours la liste des amers et si un amer ne fait pas partie de la liste, on l'ajoute. 
 if __name__ == '__main__':
     #Donnees 
     Nbamer = 8
