@@ -64,6 +64,16 @@ def GenerateRobotMeasurment (NbInst : int, Nbamer : int, RobPos : np.ndarray, am
             Mes[y][int(x/2)] = {"amer" : x/2, "range" : ran, "bearing" : bear}
     return Mes
 
+def JacobF(X : np.ndarray, U : np.ndarray) : 
+    F = np.zeros((3+Nbamer*2,3+Nbamer*2))
+    F[0,0] = 1
+    F[0,2] = -U[0]*math.sin(X[2])
+    F[1,1] = 1
+    F[1,2] = U[0]*math.cos(X[2])
+    F[2,2] = 1
+    return F
+
+
 #Pour le tri des mesures, faire une fonction, on parcours la liste des amers et si un amer ne fait pas partie de la liste, on l'ajoute. 
 if __name__ == '__main__':
     #Donnees 
@@ -78,13 +88,13 @@ if __name__ == '__main__':
     covAng = np.pi/9500
     covDis0 = 0.000001
     covAng0 = np.pi/10000
-    covDisMes = 0.02
-    covAngMes = pi/20
+    covDisMes = 0.01
+    covAngMes = np.pi/20
     
     amers = AmerCreation(Nbamer, distX, distY, xA0, yA0)
-    U, Xreel, Nb1, Nb2, Nb3, PX0, PX1, PX2, PX3 = GenerateRobotPosition(xR0, yR0, tau, covDis, covAng, covDis0, covAng0)
+    U, Xreel, Nb1, Nb2, Nb3, PX0, Qw1, Qw2, Qw3 = GenerateRobotPosition(xR0, yR0, tau, covDis, covAng, covDis0, covAng0)
     N = Nb1+Nb2+Nb3+1
-    Z = GenerateRobotMeasurment (N, Nbamer, Xreel, amers)
+    Z = GenerateRobotMeasurment (N, Nbamer, Xreel, amers, covAng, covDis)
     PlotRobotMap(Xreel, amers, 'test', (1,1,1))
     print("\n--- Fermez la figure pour terminer ---\n")
     plt.show()
@@ -92,19 +102,32 @@ if __name__ == '__main__':
     #Filtrage 
     #Initialisation
     print("Filtrage - Initialisation")
-    NbInst = U.shape[1]+1
-    Xest = np.empty((3+Nbamer*2, NbInst))
-    Pest = np.empty((3+Nbamer*2,3+Nbamer*2,NbInst))
-    Xpred = np.empty((3+Nbamer*2, NbInst))
-    Ppred = np.empty((3+Nbamer*2,3+Nbamer*2,NbInst))
-    Qw = np.diag(np.append([covDis, covDis, covAng], 0.000001*np.ones(2*Nbamer)))
-    B = np.append(np.identity(3), np.zeros((2*Nbamer, 3)), axis=0)
-
+    Xest = np.empty((3+Nbamer*2, N))
+    Pest = np.empty((3+Nbamer*2,3+Nbamer*2,N))
+    Xpred = np.empty((3+Nbamer*2, N))
+    Ppred = np.empty((3+Nbamer*2,3+Nbamer*2,N))
+    
     Xest[:,0] = np.append([xR0, yR0, 0], amers)
     Pest[:,:,0] = np.diag(np.append([0, 0, 0], dispAmers*np.ones(2*Nbamer)))
 
     #Boucle de filtrage 
-    
-        #Prediction 
+    print("Filtrage - Boucle")
+    for k in range(1,N) :
+        #Prediction
+        Xpred[0, k] = Xest[0,k-1]+U[0,k-1]*math.cos(Xest[2,k-1]) 
+        Xpred[1, k] = Xest[1,k-1]+U[0,k-1]*math.sin(Xest[2,k-1]) 
+        Xpred[2, k] = Xest[2,k-1]+U[1,k-1]
+        F = JacobF(Xest[:,k-1], U[:,k-1])
+        Qw = np.zeros((3+2*Nbamer,3+2*Nbamer))
+        if k<Nb1 :
+            Qw[:3,:3] = Qw1
+        elif k<Nb2+Nb1 :
+            Qw[:3,:3] = Qw2
+        else :
+            Qw[:3,:3] = Qw3
+        Ppred[:,:,k] = F@Pest[:,:,k-1]@F.T + Qw
 
-        #Mise a jour 
+        #Mise a jour
+        Xest[:,k] = Xpred[:,k]
+        Pest[:,:,k] = Ppred[:,:,k]
+    print("Filtrage - Terminé")
