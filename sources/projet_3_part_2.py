@@ -81,9 +81,6 @@ if __name__ == '__main__':
     covDisMes = 0.02
     covAngMes = pi/20
     
-
-
-
     amers = AmerCreation(Nbamer, distX, distY, xA0, yA0)
     U, Xreel, Nb1, Nb2, Nb3, PX0, PX1, PX2, PX3 = GenerateRobotPosition(xR0, yR0, tau, covDis, covAng, covDis0, covAng0)
     N = Nb1+Nb2+Nb3+1
@@ -91,3 +88,23 @@ if __name__ == '__main__':
     PlotRobotMap(Xreel, amers, 'test', (1,1,1))
     print("\n--- Fermez la figure pour terminer ---\n")
     plt.show()
+
+    #Filtrage 
+    #Initialisation
+    print("Filtrage - Initialisation")
+    NbInst = U.shape[1]+1
+    Xest = np.empty((3+Nbamer*2, NbInst))
+    Pest = np.empty((3+Nbamer*2,3+Nbamer*2,NbInst))
+    Xpred = np.empty((3+Nbamer*2, NbInst))
+    Ppred = np.empty((3+Nbamer*2,3+Nbamer*2,NbInst))
+    Qw = np.diag(np.append([covDis, covDis, covAng], 0.000001*np.ones(2*Nbamer)))
+    B = np.append(np.identity(3), np.zeros((2*Nbamer, 3)), axis=0)
+
+    Xest[:,0] = np.append([xR0, yR0, 0], amers)
+    Pest[:,:,0] = np.diag(np.append([0, 0, 0], dispAmers*np.ones(2*Nbamer)))
+
+    #Boucle de filtrage 
+    
+        #Prediction 
+
+        #Mise a jour 
