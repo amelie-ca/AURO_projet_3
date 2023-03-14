@@ -58,7 +58,7 @@ def GenerateRobotMeasurment (NbInst : int, Nbamer : int, RobPos : np.ndarray, am
         for x in range(0, 2*Nbamer, 2) : 
             #Calcul range et bearing 
             ran = math.sqrt((amers[x]-RobPos[0, y])**2+(amers[x+1]-RobPos[1, y])**2) + covDist/2*np.random.normal()
-            bear = math.atan2(amers[x+1]-RobPos[1, y] ,amers[x]-RobPos[0, y]) + covAng/2*np.random.normal()
+            bear = math.atan2(amers[x+1]-RobPos[1, y], amers[x]-RobPos[0, y])-RobPos[2, y] + covAng/2*np.random.normal()
             if (abs(bear)>math.pi/2 or ran > 2) :
                 ran = np.nan
                 bear = np.nan
@@ -87,7 +87,7 @@ def MeasShortage(Z, X, covD, covA) :
             Zuse.append(Zi["bearing"])
             indZ.append(Zi["amer"])
             Zest.append(math.sqrt((X[int(3+2*Zi["amer"])]-X[0])**2+(X[int(3+2*Zi["amer"]+1)]-X[1])**2))
-            Zest.append(math.atan2(X[int(3+2*Zi["amer"]+1)]-X[1] ,X[int(3+2*Zi["amer"])]-X[0]))
+            Zest.append(math.atan2(X[int(3+2*Zi["amer"]+1)]-X[1] ,X[int(3+2*Zi["amer"])]-X[0])-X[2])
             
     Zuse = np.array(Zuse)
     Zest = np.array(Zest)
