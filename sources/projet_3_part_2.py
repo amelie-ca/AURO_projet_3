@@ -142,7 +142,7 @@ if __name__ == '__main__':
     Xest[:,0] = np.append([xR0, yR0, 0], Mamer)
 
     Pest[:,:,0] = np.diag(np.append([0.000000001, 0.000000001,0.000000001], dispAmers*np.ones(2*Nbamer)))
-    N = 150
+    #N = 125
     #Boucle de filtrage 
     print("Filtrage - Boucle")
     for k in range(1,N) :
