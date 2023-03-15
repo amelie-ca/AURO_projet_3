@@ -28,7 +28,7 @@ Fonction pour l'affichage de la carte avec les amers et la trajectoire du robot
 Input : etat : pose du robot pour toute la simulation, amers : position des amers 
 Output : None
 """
-def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : str, posPlot) :
+def PlotRobotMap(etat : np.ndarray, amers : np.ndarray, title : str, posPlot = [1,1,1]) :
     ax = MapPlot(amers, posPlot)
     N = etat.shape[1]
     x = np.empty((N,))

@@ -53,16 +53,16 @@ Output :
     sigma3, ndarray : variance matrix between instant N2 and N3
 """    
 def GenerateRobotPosition(xR0 : float, yR0 : float, pasTau : float, covPos : float, covAng : float, covPos0 : float, covAng0 : float ) -> np.ndarray :
-    N1 = 70
-    N2 = 45
-    N3 = 70
+    N1 = 20
+    N2 = 15
+    N3 = 20
     N = N1+N2+N3
     #Creation des vecteurs et matrices
     U = np.empty((2,N))
     RobPos = np.empty((3,N+1))
     sigma0 = np.diag([covPos0, covPos0, covAng0])
-    sigma1 = np.diag([covPos, covPos, 0.00000000000000000000001])
-    sigma2 = np.diag([0.2*covPos, 0.2*covPos, covAng])
+    sigma1 = np.diag([covPos, covPos, 0.000000000001])
+    sigma2 = np.diag([0.1*covPos, 0.1*covPos, covAng])
     sigma3 = sigma1
     RobPos[:,0] = [xR0, yR0, 0] + np.linalg.cholesky(sigma0)@np.random.normal(size=(3,))
     
