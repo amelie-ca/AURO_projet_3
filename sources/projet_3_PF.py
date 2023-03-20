@@ -29,18 +29,63 @@ Input :
 Output : 
     PartsF : new particles generated
 """
-def Propag(N : int, PartsM, U : np.ndarray, Qw : np.ndarray) :
+def Propag(N : int, NbLM : int, PartsM, U : np.ndarray, Qw : np.ndarray, Z, covA : float, covD : float) :
     PartsF = [dict() for i in range(N)]
     X = np.empty(3)
-    #SumW = 0
+    SumW = 0
+    S = 0
+    
     for k in range(N) :
         theta = PartsM[k]["RobPos"][2]
         X[0] = PartsM[k]["RobPos"][0] + U[0]*math.cos(theta)
         X[1] = PartsM[k]["RobPos"][1] +U[0]*math.sin(theta)
         X[2] = PartsM[k]["RobPos"][2] +U[1]
         X = X + np.linalg.cholesky(Qw)@np.random.normal(size=(3,))
-        PartsF[k] = {"RobPos" : X, "Amers" : PartsM[k]["Amers"], "W" : PartsM[k]["W"]}
+        PartsF[k] = {"RobPos" : X, "Amers" : PartsM[k]["Amers"], "W" : 0}
+        Zest = DetMes(PartsF[k], NbLM)
+        W = CalclW(Z, Zest, PartsM[k]["W"], NbLM, covA, covD)  
+        SumW += W
+        PartsF[k]["W"] = W
+        print(PartsF[k]["W"])
+    print('\n')
+    for k in range(N) : 
+        PartsF[k]["W"] = PartsF[k]["W"]/SumW
+        S+=PartsF[k]["W"] 
+        print(PartsF[k]["W"])
+    print('\n')
+    print(S)
+    print('-----------------------')
+        
+
+
     return PartsF
+
+def DetMes(Part, NbLM : int) : 
+    Zest = [dict() for x in range(NbLM)]
+    for i in range(0, 2*NbLM, 2) : 
+            rang = math.sqrt((Part['Amers'][i]-Part['RobPos'][0])**2+(Part['Amers'][i+1]-Part['RobPos'][1])**2)
+            bear = math.atan2(Part['Amers'][i+1]-Part['RobPos'][1], Part['Amers'][i]-Part['RobPos'][0])-Part['RobPos'][2] 
+            Zest[int(i/2)] = {'amer' : i, 'range' : rang, 'bearing' : bear}
+    return Zest
+
+def CalclW(Zr, Zest, Wm, NbLM, covA, covD) :
+    W = 0 
+    Rv = np.diag([covD, covA])
+    Mes = False
+    for i in range(NbLM) :
+        if not np.isnan(Zr[i]["range"]) :
+            ErrRang = Zr[i]["range"] - Zest[i]["range"]
+            ErrBear = Zr[i]["bearing"] - Zest[i]["bearing"]
+            Err = np.array((ErrRang, ErrBear))
+            W += -1/2 * (Err@np.linalg.inv(Rv)@Err.T)
+            Mes = True
+    if Mes : 
+        W = W*math.log(Wm)
+        W = math.exp(W)
+    else : 
+        W = Wm
+    return W
+        
 
 
 
@@ -60,7 +105,7 @@ if __name__ == '__main__':
     covDisMes = 0.01
     covAngMes = np.pi/20
 
-    NbPart = 100
+    NbPart = 20
     
     Mamer, amers = LMCreation(Nbamer, distX, distY, xA0, yA0, dispAmers)
     U, Xreel, Nb1, Nb2, Nb3, PX0, Qw1, Qw2, Qw3 = GenerateRobotPosition(xR0, yR0, tau, covDis, covAng, covDis0, covAng0)
@@ -70,12 +115,15 @@ if __name__ == '__main__':
     print("--- Carte affichee, fermez la fenetre pour continuer ---")
     plt.show()
 
+
     #Filtrage 
     #Initialisation 
     Part = [[dict() for x in range(NbPart)] for y in range(N)]
     Part[0] = InitPF(NbPart, Mamer, dispAmers)
-
+   
     for k in range(1, N) :
+        print('-----------------------')
+        print("Iteration : ", k, '\n')
         #Propagation 
         if k<Nb1 :
             Qw = Qw1
@@ -83,6 +131,6 @@ if __name__ == '__main__':
             Qw = Qw2
         else :
             Qw = Qw3
-        Part[k] = Propag(NbPart, Part[k-1], U[:,k-1], Qw)
+        Part[k] = Propag(NbPart, Nbamer, Part[k-1], U[:,k-1], Qw, Zr[k-1], covAngMes, covDisMes)
         #Estim et cov 
 
