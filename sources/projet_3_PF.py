@@ -86,7 +86,17 @@ def CalclW(Zr, Zest, Wm, NbLM, covA, covD) :
         W = Wm
     return W
         
-
+def EspPart(Parts, NbPart, Nbamer) :
+    X = np.empty((NbPart, int(3+2*Nbamer)))
+    Xest = np.zeros(int(3+2*Nbamer))
+    Pest = 0
+    for i in range(NbPart) : 
+        X[i,:3] = Parts[i]["RobPos"]
+        X[i, 3:] = Parts[i]["Amers"]
+        Xest = Xest + Parts[i]["W"]*X[i]
+    for i in range(NbPart) :
+        Pest =  Pest + (X[i]-Xest)@(X[i]-Xest).T
+    return Xest, Pest
 
 
 if __name__ == '__main__':
@@ -105,7 +115,7 @@ if __name__ == '__main__':
     covDisMes = 0.01
     covAngMes = np.pi/20
 
-    NbPart = 20
+    NbPart = 10
     
     Mamer, amers = LMCreation(Nbamer, distX, distY, xA0, yA0, dispAmers)
     U, Xreel, Nb1, Nb2, Nb3, PX0, Qw1, Qw2, Qw3 = GenerateRobotPosition(xR0, yR0, tau, covDis, covAng, covDis0, covAng0)
@@ -114,7 +124,6 @@ if __name__ == '__main__':
     PlotRobotMap(Xreel, amers, "Trajectoire")
     print("--- Carte affichee, fermez la fenetre pour continuer ---")
     plt.show()
-
 
     #Filtrage 
     #Initialisation 
@@ -133,4 +142,6 @@ if __name__ == '__main__':
             Qw = Qw3
         Part[k] = Propag(NbPart, Nbamer, Part[k-1], U[:,k-1], Qw, Zr[k-1], covAngMes, covDisMes)
         #Estim et cov 
+        Xest, Pest = EspPart(Part[k], NbPart, Nbamer)
+        print('Estimations : ', Xest, '\t', Pest)
 
