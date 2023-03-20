@@ -144,4 +144,3 @@ if __name__ == '__main__':
         #Estim et cov 
         Xest, Pest = EspPart(Part[k], NbPart, Nbamer)
         print('Estimations : ', Xest, '\t', Pest)
-
