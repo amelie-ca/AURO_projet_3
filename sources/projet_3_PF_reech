@@ -90,6 +90,8 @@ def EspPart(Parts, NbPart, Nbamer) :
         Pest =  Pest + (X[i]-Xest)@(X[i]-Xest).T
     return Xest, Pest
 
+def Resampling(Part[N], NbPart):
+
 
 if __name__ == '__main__':
     #Donnees 
@@ -133,4 +135,9 @@ if __name__ == '__main__':
         Part[k] = Propag(NbPart, Nbamer, Part[k-1], U[:,k-1], Qw, Zr[k-1], covAngMes, covDisMes)
         #Estim et cov 
         Xest, Pest = EspPart(Part[k], NbPart, Nbamer)
-        p
+        Neff = 0 
+        for i in range(NbPart) :
+            Neff = Neff + Part[k][i]["W"]**2
+        Neff = 1/Neff
+        if (Neff < NbPart/3) :
+            Part[k] = Resampling(Part[N], NbPart)

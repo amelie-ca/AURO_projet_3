@@ -129,6 +129,11 @@ if __name__ == '__main__':
     #Initialisation 
     Part = [[dict() for x in range(NbPart)] for y in range(N)]
     Part[0] = InitPF(NbPart, Mamer, dispAmers)
+    Neff = 0 
+    for i in range(NbPart) :
+        Neff = Neff + Part[0][i]["W"]**2
+    Neff = 1/Neff
+    print("Neff initial : ", Neff)
    
     for k in range(1, N) :
         print('-----------------------')
@@ -143,4 +148,8 @@ if __name__ == '__main__':
         Part[k] = Propag(NbPart, Nbamer, Part[k-1], U[:,k-1], Qw, Zr[k-1], covAngMes, covDisMes)
         #Estim et cov 
         Xest, Pest = EspPart(Part[k], NbPart, Nbamer)
-        print('Estimations : ', Xest, '\t', Pest)
+        Neff = 0 
+        for i in range(NbPart) :
+            Neff = Neff + Part[k][i]["W"]**2
+        Neff = 1/Neff
+        print('Estimations : ', Xest, '\t', Pest, '\t', Neff)
