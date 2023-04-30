@@ -59,7 +59,7 @@ def GenerateRobotMeasurment (NbInst : int, Nbamer : int, RobPos : np.ndarray, am
             #Calcul range et bearing 
             ran = math.sqrt((amers[x]-RobPos[0, y])**2+(amers[x+1]-RobPos[1, y])**2) + covDist/2*np.random.normal()
             bear = math.atan2(amers[x+1]-RobPos[1, y], amers[x]-RobPos[0, y])-RobPos[2, y] + covAng/2*np.random.normal()
-            if (abs(bear)>math.pi/2 or ran > 2) :
+            if (abs(bear)>math.pi/2 or ran > 2.5) :
                 ran = np.nan
                 bear = np.nan
             #Ajout dans la structure 
@@ -120,9 +120,9 @@ if __name__ == '__main__':
     xR0, yR0 = (0,0)
 
     covDis = 0.0001
-    covAng = np.pi/9500
+    covAng = np.pi/10&000
     covDis0 = 0.000001
-    covAng0 = np.pi/10000
+    covAng0 = np.pi/100000
     covDisMes = 0.01
     covAngMes = np.pi/20
     
@@ -160,6 +160,7 @@ if __name__ == '__main__':
         else :
             Qw[:3,:3] = Qw3
         Ppred[:,:,k] = F@Pest[:,:,k-1]@F.T + Qw
+        
         Z, Zest, H, Rv, Mes = MeasShortage(Zr[k], Xpred[:,k], covDisMes, covAngMes)
         #Mise a jour 
        
@@ -168,23 +169,9 @@ if __name__ == '__main__':
             K = Ppred[:,:,k]@H.T@np.linalg.inv(S)
             Xest[:,k] = Xpred[:,k] + K@(Z-Zest)
             Pest[:,:,k] = Ppred[:,:,k] - K@H@Ppred[:,:,k]
-            print("\n-----------------------")
-            print(k)
-            print(Xreel[:,k])
-            print(amers)
-            print(Xpred[:,k])
-            print(Zr[k])
-            print(H)
-            print(Z)
-            print(Zest)
-            print(K)
-            print("-----------------------")
-
-
-        
-
         else :
             Xest[:,k] = Xpred[:,k]
             Pest[:,:,k] = Ppred[:,:,k]
+        
     print("Filtrage - Terminé")
     PlotRes(Xreel, amers, Xest, Pest, N)
